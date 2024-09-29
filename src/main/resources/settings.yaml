@@ -1,0 +1,12 @@
+
+user:
+  uidLength: 12
+
+auth:
+  captchaExpire: 3600
+  tokenExpireMinutes: 36000
+  rsaKeyPath: /Users/zouzhenghan/Documents/Coding/YouChat-Backend/src/main/resources/
+
+group:
+  maxGroupPerUser: 10
+  defaultNotice: 在此处填写群介绍/公告
