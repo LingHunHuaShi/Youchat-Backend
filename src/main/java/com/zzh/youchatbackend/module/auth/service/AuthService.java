@@ -10,4 +10,5 @@ public interface AuthService {
     Map<String, String> getCaptcha();
     String register(RegisterVO registerVO);
     UserTokenVO login(LoginVO loginVO);
+    String logout(String uid);
 }

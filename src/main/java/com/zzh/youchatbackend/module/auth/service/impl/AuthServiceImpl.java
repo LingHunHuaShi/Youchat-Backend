@@ -58,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Map<String, String> getCaptcha() {
         GifCaptcha gifCaptcha = new GifCaptcha(130, 50, 6);
-        gifCaptcha.setCharType(GifCaptcha.TYPE_DEFAULT);
+        gifCaptcha.setCharType(GifCaptcha.TYPE_ONLY_UPPER);
         String captchaImg = gifCaptcha.toBase64();
         String captchaCode = gifCaptcha.text();
         String captchaImgUuid = UUID.randomUUID().toString();
@@ -127,7 +127,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     public UserTokenVO login(LoginVO loginVO) {
         String captchaImgUuid = loginVO.getCaptchaImgUuid();
-        String captchaCode = loginVO.getCaptchaCode();
+        String captchaCode = loginVO.getCaptchaCode().toUpperCase();
 
         if (!captchaCode.equals(redisUtils.hmget(RedisConstants.CAPTCHA_MAP_KEY).get(captchaImgUuid))) {
             throw new BusinessException("Incorrect captcha code");
@@ -171,6 +171,21 @@ public class AuthServiceImpl implements AuthService {
                 .nickname(user.getNickName())
                 .isAdmin(isAdmin)
                 .token(token)
+                .uid(user.getUid())
                 .build();
+    }
+
+    @Override
+    public String logout(String uid) {
+        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(User::getUid, uid);
+        User user = userMapper.selectOne(lambdaQueryWrapper);
+        user.setStatus(UserStatusEnum.OFFLINE);
+        LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(User::getUid, user.getUid());
+        userMapper.update(user, updateWrapper);
+        logger.info("Successfully logged out");
+
+        return "Successfully logged out";
     }
 }

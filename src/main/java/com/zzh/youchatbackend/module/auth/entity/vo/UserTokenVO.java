@@ -10,6 +10,7 @@ import java.io.Serializable;
 public class UserTokenVO implements Serializable {
     public static final Long serialVersionUID = 1L;
 
+    private String uid;
     private String token;
     private String email;
     private String nickname;

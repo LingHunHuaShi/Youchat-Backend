@@ -40,8 +40,12 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseVO<UserTokenVO> login(@RequestBody LoginVO loginVO) {
-
         return ResponseVO.success(authService.login(loginVO));
+    }
+
+    @PostMapping("/logout")
+    public ResponseVO<String> logout(@RequestParam String uid) {
+        return ResponseVO.success(authService.logout(uid));
     }
 
 
