@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="AliCloud" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="YouChat-Backend" />
+    <projectPathOnTarget name="projectPathOnTarget" value="/www/wwwroot/youchat.hua4.xyz/YouChat-Backend" />
+    <target name="root@120.27.243.148:22" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.zzh.youchatbackend.YouChatBackendApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
