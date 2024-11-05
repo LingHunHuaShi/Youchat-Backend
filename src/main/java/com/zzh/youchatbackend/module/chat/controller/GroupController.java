@@ -24,7 +24,7 @@ public class GroupController {
     }
 
     @PostMapping("/createGroup")
-    @AuthFilter(checkAdmin = true)
+    @AuthFilter(checkAdmin = false)
     public ResponseVO<Group> createGroup(@RequestBody GroupVO group) {
         Group newGroup = groupService.createGroup(group.getGroupName(), group.getOwnerUid(), group.getAvatarFile(), group.getAvatarCover());
         return ResponseVO.success(newGroup);
