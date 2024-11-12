@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zzh.youchatbackend.common.entity.po.User;
 import com.zzh.youchatbackend.common.entity.query.UserQuery;
 import com.zzh.youchatbackend.common.mapper.UserMapper;
+import com.zzh.youchatbackend.module.common.entity.vo.UserVO;
 import com.zzh.youchatbackend.module.common.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,26 +66,28 @@ public class UserServiceImpl implements UserService {
     public Page<User> getPagedUserList(UserQuery userQuery, Integer pageNum, Integer pageSize) {
         LambdaQueryWrapper<User> queryWrapper = buildLambdaQueryWrapper(userQuery);
 
-        Page<User> pagedUserList = userMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
-
-        return pagedUserList;
+        return userMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
     }
 
     @Override
     public List<User> getUserList(UserQuery userQuery) {
         LambdaQueryWrapper<User> queryWrapper = buildLambdaQueryWrapper(userQuery);
 
-        List<User> userList = userMapper.selectList(queryWrapper);
-
-        return userList;
+        return userMapper.selectList(queryWrapper);
     }
 
     @Override
     public User getUser(UserQuery userQuery) {
         LambdaQueryWrapper<User> queryWrapper = buildLambdaQueryWrapper(userQuery);
 
-        User user = userMapper.selectOne(queryWrapper);
+        return userMapper.selectOne(queryWrapper);
+    }
 
-        return user;
+    @Override
+    public UserVO getUserVOByUid(String uid) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getUid, uid);
+        User user = userMapper.selectOne(queryWrapper);
+        return UserVO.of(user);
     }
 }

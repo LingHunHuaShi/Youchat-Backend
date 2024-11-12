@@ -55,4 +55,9 @@ public class User {
     @TableField("last_logout_time")
     private Long lastLogoutTime;
 
+    @TableField("area_name")
+    private String areaName;
+
+    @TableField("area_code")
+    private String areaCode;
 }
