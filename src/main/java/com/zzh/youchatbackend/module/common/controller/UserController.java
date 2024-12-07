@@ -10,6 +10,8 @@ import com.zzh.youchatbackend.module.common.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,18 +28,18 @@ public class UserController {
 
     @GetMapping("/user")
     @AuthFilter(checkAdmin = true)
-    public ResponseVO<Page<User>> queryUser(@RequestBody UserQuery userQuery,
-                                            @RequestParam(defaultValue = "0") Integer pageNum,
-                                            @RequestParam(defaultValue = "10") Integer pageSize) {
+    public ResponseEntity<ResponseVO<Page<User>>> queryUser(@RequestBody UserQuery userQuery,
+                                                            @RequestParam(defaultValue = "0") Integer pageNum,
+                                                            @RequestParam(defaultValue = "10") Integer pageSize) {
 
         Page<User> pagedUserList = userService.getPagedUserList(userQuery, pageNum, pageSize);
-        return ResponseVO.success(pagedUserList);
+        return new ResponseEntity<>(ResponseVO.success(pagedUserList), HttpStatus.OK);
     }
 
     @GetMapping("/user/{uid}")
     @AuthFilter
-    public ResponseVO<UserVO> queryUserVOByUid(@PathVariable("uid") String uid) {
+    public ResponseEntity<ResponseVO<UserVO>> queryUserVOByUid(@PathVariable("uid") String uid) {
         UserVO userVO = userService.getUserVOByUid(uid);
-        return ResponseVO.success(userVO);
+        return new ResponseEntity<>(ResponseVO.success(userVO), HttpStatus.OK);
     }
 }

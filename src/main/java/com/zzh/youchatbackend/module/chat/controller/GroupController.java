@@ -6,6 +6,8 @@ import com.zzh.youchatbackend.common.entity.vo.ResponseVO;
 import com.zzh.youchatbackend.module.chat.entity.vo.GroupVO;
 import com.zzh.youchatbackend.module.chat.service.GroupService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,8 +27,8 @@ public class GroupController {
 
     @PostMapping("/createGroup")
     @AuthFilter(checkAdmin = false)
-    public ResponseVO<Group> createGroup(@RequestBody GroupVO group) {
+    public ResponseEntity<ResponseVO<Group>> createGroup(@RequestBody GroupVO group) {
         Group newGroup = groupService.createGroup(group.getGroupName(), group.getOwnerUid(), group.getAvatarFile(), group.getAvatarCover());
-        return ResponseVO.success(newGroup);
+        return new ResponseEntity<>(ResponseVO.success(newGroup), HttpStatus.OK);
     }
 }

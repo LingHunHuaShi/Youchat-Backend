@@ -8,6 +8,8 @@ import com.zzh.youchatbackend.module.auth.service.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,25 +29,25 @@ public class AuthController {
     }
 
     @GetMapping("/captcha")
-    public ResponseVO<Map<String, String>> getCaptcha() {
+    public ResponseEntity<ResponseVO<Map<String, String>>> getCaptcha() {
         logger.info("Received Request for Captcha");
-        return ResponseVO.success(authService.getCaptcha());
+        return new ResponseEntity<>(ResponseVO.success(authService.getCaptcha()), HttpStatus.OK);
     }
 
     @PostMapping("/register")
-    public ResponseVO<String> register(@RequestBody RegisterVO registerVO) {
+    public ResponseEntity<ResponseVO<String>> register(@RequestBody RegisterVO registerVO) {
         logger.info("register user: {}", registerVO);
-        return ResponseVO.success(authService.register(registerVO));
+        return new ResponseEntity<>(ResponseVO.success(authService.register(registerVO)), HttpStatus.OK);
     }
 
     @PostMapping("/login")
-    public ResponseVO<UserTokenVO> login(@RequestBody LoginVO loginVO) {
-        return ResponseVO.success(authService.login(loginVO));
+    public ResponseEntity<ResponseVO<UserTokenVO>> login(@RequestBody LoginVO loginVO) {
+        return new ResponseEntity<>(ResponseVO.success(authService.login(loginVO)), HttpStatus.OK);
     }
 
     @PostMapping("/logout")
-    public ResponseVO<String> logout(@RequestParam String uid) {
-        return ResponseVO.success(authService.logout(uid));
+    public ResponseEntity<ResponseVO<String>> logout(@RequestParam String uid) {
+        return new ResponseEntity<>(ResponseVO.success(authService.logout(uid)), HttpStatus.OK);
     }
 
 
