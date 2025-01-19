@@ -12,6 +12,7 @@ import com.zzh.youchatbackend.common.token.RsaKeyGenerator;
 import com.zzh.youchatbackend.common.token.RsaKeyProvider;
 import com.zzh.youchatbackend.module.auth.entity.vo.RegisterVO;
 import com.zzh.youchatbackend.module.auth.service.AuthService;
+import com.zzh.youchatbackend.module.chat.entity.vo.GroupVO;
 import com.zzh.youchatbackend.module.chat.service.GroupService;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -216,17 +217,18 @@ class YouChatBackendApplicationTests {
 
     @Test
     void testGroupCreation() {
-//        Group newGroup = Group.builder()
-//                .groupName("group-one")
-//                .groupStats(GroupStatsEnum.NORMAL)
-//                .ownerUid("SUPREMEADMIN")
-//                .createTime(LocalDateTime.now())
-//                .updateTime(LocalDateTime.now())
-//                .groupNotice("TEST NOTICE 1")
-//                .privacyLevel(PrivacyLevelEnum.LEVEL_1)
-//                .build();
-//
-        groupService.createGroup("group-one", "SUPREMEADMIN", null, null);
+        Group newGroup = Group.builder()
+                .groupName("group-one")
+                .groupStats(GroupStatsEnum.NORMAL)
+                .ownerUid("SUPREMEADMIN")
+                .createTime(LocalDateTime.now())
+                .updateTime(LocalDateTime.now())
+                .groupNotice("TEST NOTICE 1")
+                .privacyLevel(PrivacyLevelEnum.LEVEL_1)
+                .build();
+
+        GroupVO groupVO = new GroupVO(newGroup, null, null);
+        groupService.createGroup(groupVO);
     }
 
 }

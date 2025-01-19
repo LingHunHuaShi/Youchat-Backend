@@ -8,12 +8,17 @@ import com.zzh.youchatbackend.common.entity.po.Group;
 import com.zzh.youchatbackend.common.entity.query.GroupQuery;
 import com.zzh.youchatbackend.common.exception.BusinessException;
 import com.zzh.youchatbackend.common.mapper.GroupMapper;
+import com.zzh.youchatbackend.common.token.JwtTokenUtils;
 import com.zzh.youchatbackend.module.chat.entity.enums.ContactStatusEnum;
 import com.zzh.youchatbackend.module.chat.entity.enums.UserContactEnum;
 import com.zzh.youchatbackend.module.chat.entity.po.Contact;
+import com.zzh.youchatbackend.module.chat.entity.vo.GroupVO;
 import com.zzh.youchatbackend.module.chat.mapper.ContactMapper;
 import com.zzh.youchatbackend.module.chat.service.GroupService;
 import com.zzh.youchatbackend.module.utils.StringUtils;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.MalformedClaimException;
+import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -21,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,13 +38,15 @@ public class GroupServiceImpl implements GroupService {
     Environment environment;
     StringUtils stringUtils;
     ContactMapper contactMapper;
+    JwtTokenUtils jwtTokenUtils;
 
     @Autowired
-    public GroupServiceImpl(GroupMapper groupMapper, Environment environment, StringUtils stringUtils, ContactMapper contactMapper) {
+    public GroupServiceImpl(GroupMapper groupMapper, Environment environment, StringUtils stringUtils, ContactMapper contactMapper, JwtTokenUtils jwtTokenUtils) {
         this.groupMapper = groupMapper;
         this.environment = environment;
         this.stringUtils = stringUtils;
         this.contactMapper = contactMapper;
+        this.jwtTokenUtils = jwtTokenUtils;
     }
 
     private LambdaQueryWrapper<Group> buildQueryWrapper(GroupQuery groupQuery) {
@@ -57,6 +66,25 @@ public class GroupServiceImpl implements GroupService {
         return queryWrapper;
     }
 
+    private void updateGroupAvatar(String groupId, MultipartFile avatarFile, MultipartFile avatarCover) throws BusinessException {
+        String avatarFolderPath = environment.getProperty("project.folder") + environment.getProperty("file.avatar.path");
+        File avatarFolder = new File(avatarFolderPath);
+        if (!avatarFolder.exists()) {
+            boolean folderMakeRes = avatarFolder.mkdirs();
+            if (!folderMakeRes) {
+                throw new BusinessException("Failed to create folder.");
+            }
+        }
+        String avatarFilePath = avatarFolderPath + groupId + environment.getProperty("file.avatar.fileExtension");
+        String avatarCoverPath = avatarFolderPath + groupId + environment.getProperty("file.avatar.coverExtension");
+        try {
+            avatarFile.transferTo(new File(avatarFilePath));
+            avatarCover.transferTo(new File(avatarCoverPath));
+        } catch (IOException e) {
+            throw new BusinessException("Failed to copy avatar file.");
+        }
+    }
+
     @Override
     public List<Group> getGroupList(GroupQuery groupQuery) {
         LambdaQueryWrapper<Group> queryWrapper = buildQueryWrapper(groupQuery);
@@ -73,9 +101,9 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Group createGroup(String groupName, String ownerId, MultipartFile avatarFile, MultipartFile avatarCover) {
+    public Group createGroup(GroupVO groupVO) {
         GroupQuery groupQuery = GroupQuery.builder()
-                .ownerUid(ownerId)
+                .ownerUid(groupVO.getOwnerUid())
                 .build();
 
         List<Group> userGroupList = groupMapper.selectList(buildQueryWrapper(groupQuery));
@@ -84,8 +112,8 @@ public class GroupServiceImpl implements GroupService {
         }
 
         Group group = Group.builder()
-                .groupName(groupName)
-                .ownerUid(ownerId)
+                .groupName(groupVO.getGroupName())
+                .ownerUid(groupVO.getOwnerUid())
                 .gid(stringUtils.getRandomGid())
                 .privacyLevel(PrivacyLevelEnum.LEVEL_1)
                 .groupStats(GroupStatsEnum.NORMAL)
@@ -108,6 +136,43 @@ public class GroupServiceImpl implements GroupService {
                 .build();
         contactMapper.insert(contact);
 
+        // 添加头像
+        if (groupVO.getAvatarCover() != null && groupVO.getAvatarFile() != null) {
+            updateGroupAvatar(group.getGid(), groupVO.getAvatarFile(), groupVO.getAvatarCover());
+        }
+
+        // TODO 创建会话
+        // TODO 发送欢迎消息
+
         return group;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Group updateGroup(GroupVO groupVO, String token) {
+        // 验证 TOKEN 合法性，获取 Token uid
+        JwtClaims claims = jwtTokenUtils.verifyToken(token);
+        String tokenUid;
+        try {
+            tokenUid = claims.getSubject();
+        } catch (MalformedClaimException e) {
+            throw new BusinessException("Token invalid.");
+        }
+
+        // 验证 uid 和 ownerUid 是否相同
+        String groupOwnerUid = groupMapper.selectById(groupVO.getGid()).getOwnerUid();
+        if (!tokenUid.equals(groupOwnerUid)) {
+            throw new BusinessException("You are not the owner of this group.");
+        }
+        // 更新 group 数据库
+        groupMapper.updateById(groupVO);
+
+        // 更新 group 头像
+        if (groupVO.getAvatarCover() != null && groupVO.getAvatarFile() != null) {
+            updateGroupAvatar(groupVO.getGid(), groupVO.getAvatarFile(), groupVO.getAvatarCover());
+        }
+
+        // TODO 如果更新昵称则发送 WS 消息
+        return groupVO;
     }
 }
