@@ -16,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping(value = "/users")
 @Validated
 public class UserController {
     public static final Logger logger = LoggerFactory.getLogger(UserController.class);
@@ -26,7 +27,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/user")
+    @GetMapping
     @AuthFilter(checkAdmin = true)
     public ResponseEntity<ResponseVO<Page<User>>> queryUser(@RequestBody UserQuery userQuery,
                                                             @RequestParam(defaultValue = "0") Integer pageNum,
@@ -36,7 +37,7 @@ public class UserController {
         return new ResponseEntity<>(ResponseVO.success(pagedUserList), HttpStatus.OK);
     }
 
-    @GetMapping("/user/{uid}")
+    @GetMapping("/{uid}")
     @AuthFilter
     public ResponseEntity<ResponseVO<UserVO>> queryUserVOByUid(@PathVariable("uid") String uid) {
         UserVO userVO = userService.getUserVOByUid(uid);

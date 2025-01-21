@@ -18,7 +18,6 @@ import com.zzh.youchatbackend.module.chat.service.GroupService;
 import com.zzh.youchatbackend.module.utils.StringUtils;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -28,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -86,17 +86,15 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public List<Group> getGroupList(GroupQuery groupQuery) {
+    public List<Group> getGroupList(GroupQuery groupQuery, String token) {
         LambdaQueryWrapper<Group> queryWrapper = buildQueryWrapper(groupQuery);
-        List<Group> groupList = groupMapper.selectList(queryWrapper);
-        return groupList;
+        return groupMapper.selectList(queryWrapper);
     }
 
     @Override
     public Page<Group> getPagedGroupList(GroupQuery groupQuery, Integer pageNum, Integer pageSize) {
         LambdaQueryWrapper<Group> queryWrapper = buildQueryWrapper(groupQuery);
-        Page<Group> page = groupMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
-        return page;
+        return groupMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
     }
 
     @Override
@@ -174,5 +172,61 @@ public class GroupServiceImpl implements GroupService {
 
         // TODO 如果更新昵称则发送 WS 消息
         return groupVO;
+    }
+
+    @Override
+    public void deleteGroup(String groupId, String token) {
+        // 验证 TOKEN 合法性，获取 Token uid
+        JwtClaims claims = jwtTokenUtils.verifyToken(token);
+        String tokenUid;
+        try {
+            tokenUid = claims.getSubject();
+        } catch (MalformedClaimException e) {
+            throw new BusinessException("Token invalid.");
+        }
+
+        // 验证 uid 和 ownerUid 是否相同
+        String groupOwnerUid = groupMapper.selectById(groupId).getOwnerUid();
+        if (!tokenUid.equals(groupOwnerUid)) {
+            throw new BusinessException("You are not the owner of this group.");
+        }
+
+        groupMapper.deleteById(groupId);
+    }
+
+    @Override
+    public byte[] getGroupCover(String groupId, String token, boolean isAvatar) {
+        // 验证 TOKEN 合法性，获取 Token uid
+        JwtClaims claims = jwtTokenUtils.verifyToken(token);
+        String tokenUid;
+        try {
+            tokenUid = claims.getSubject();
+        } catch (MalformedClaimException e) {
+            throw new BusinessException("Token invalid.");
+        }
+
+        // 验证 uid 对应的用户是否在 groupId 对应的群组中
+        LambdaQueryWrapper<Contact> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Contact::getUid, tokenUid);
+        lambdaQueryWrapper.eq(Contact::getContactId, groupId);
+        List<Contact> uidContactList = contactMapper.selectList(lambdaQueryWrapper);
+        if (uidContactList.isEmpty()) {
+            throw new BusinessException("You are member of this group.");
+        }
+
+        // 从服务器本地文件中获取头像文件
+        String avatarFolderPath = environment.getProperty("project.folder") + environment.getProperty("file.avatar.path");
+        String imagePath = isAvatar ? avatarFolderPath + groupId + ".png" : avatarFolderPath + groupId + "_cover.png";
+
+        File imageFile = new File(imagePath);
+        if (!imageFile.exists()) {
+            throw new BusinessException("Avatar file not found.");
+        }
+
+        try {
+            return Files.readAllBytes(imageFile.toPath());
+        } catch (IOException e) {
+            throw new BusinessException("Avatar file read error.");
+        }
     }
 }

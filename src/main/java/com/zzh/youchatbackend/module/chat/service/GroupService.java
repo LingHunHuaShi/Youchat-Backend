@@ -9,8 +9,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface GroupService {
-    List<Group> getGroupList(GroupQuery groupQuery);
+    List<Group> getGroupList(GroupQuery groupQuery, String token);
     Page<Group> getPagedGroupList(GroupQuery groupQuery, Integer pageNum, Integer pageSize);
     Group createGroup(GroupVO groupVO);
     Group updateGroup(GroupVO groupVO, String token);
+    void deleteGroup(String groupId, String token);
+    byte[] getGroupCover(String groupId, String token, boolean isAvatar); // isAvatar=true 为 avatar
 }
